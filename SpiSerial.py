@@ -1,0 +1,54 @@
+import mraa as m
+
+
+class SpiSerial():
+    def __init__(self):
+        self.cs0 = m.Gpio(23)
+        self.cs0.dir(m.DIR_OUT)
+        self.cs0.write(1)
+
+        self.dev = m.spiFromDesc("spi-raw-5-1")
+        self.dev.frequency(62500)
+        self.dev.mode(m.SPI_MODE0)
+        self.dev.bitPerWord(8)
+        self.timeout = 0
+        self.rx_buf = []
+
+    def spi_xfer(self, b):
+        tx = bytearray(1)
+        tx[0] = (int('{:08b}'.format(b)[::-1], 2))
+        self.cs0.write(0)
+        rxbuf = self.dev.write(tx)
+        self.cs0.write(1)
+        return (int('{:08b}'.format(rxbuf[0])[::-1], 2))
+
+    def close(self):
+        pass
+
+    def write(self, tx_bytes):
+        tx_bytes = bytearray(tx_bytes)
+        self.spi_xfer(0x99)
+        num_rxd = self.spi_xfer(len(tx_bytes))
+        for y in range(0, len(tx_bytes)):
+            rx = self.spi_xfer(tx_bytes[y])
+            if num_rxd > 0:
+                self.rx_buf.append(rx)
+                num_rxd -= 1
+        for y in range(0, num_rxd):
+            rx = self.spi_xfer(0)
+            self.rx_buf.append(rx)
+
+    def read(self, num_bytes=0):
+        if num_bytes == 0:
+            num_bytes = len(self.rx_buf)
+        ret_val = self.rx_buf[0:num_bytes]
+        del(self.rx_buf[0:num_bytes])
+        return ret_val
+
+    def inWaiting(self):
+        self.spi_xfer(0x99)
+        num_rxd = self.spi_xfer(0)
+        for y in range(0, num_rxd):
+            rx = self.spi_xfer(0)
+            self.rx_buf.append(rx)
+        return len(self.rx_buf)
