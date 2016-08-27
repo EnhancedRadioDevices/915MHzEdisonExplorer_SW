@@ -3,6 +3,10 @@ import mraa as m
 
 class SpiSerial():
     def __init__(self):
+        self.RST = m.Gpio(36)
+        self.RST.dir(m.DIR_OUT)
+        self.RST.write(1)	
+    
         self.cs0 = m.Gpio(23)
         self.cs0.dir(m.DIR_OUT)
         self.cs0.write(1)
