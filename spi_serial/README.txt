@@ -6,3 +6,6 @@ Be sure to update mraa before installing:
     opkg update
     opkg install mraa
 	
+Then install with:
+
+    python setup.py install
