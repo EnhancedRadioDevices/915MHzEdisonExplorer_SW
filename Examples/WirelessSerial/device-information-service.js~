@@ -1,17 +1,17 @@
 var util = require('util');
 
-var bleno = require('bleno');
+var bleno = require('../..');
 var BlenoPrimaryService = bleno.PrimaryService;
 
 var SerialNumberCharacteristic = require('./serial-number-characteristic');
 var HardwareRevisionCharacteristic = require('./hardware-revision-characteristic');
 
-function DeviceInformationService() {
+function DeviceInformationService(ws) {
   DeviceInformationService.super_.call(this, {
     uuid: '180a',
     characteristics: [
-      new SerialNumberCharacteristic(),
-      new HardwareRevisionCharacteristic()
+      new SerialNumberCharacteristic(ws),
+      new HardwareRevisionCharacteristic(ws)
     ]
   });
 }

@@ -3,7 +3,7 @@ var util = require('util');
 var bleno = require('bleno');
 var BlenoPrimaryService = bleno.PrimaryService;
 
-var WsCharacteristic = require('./wirelessserial-characteristic');
+var wsCharacteristic = require('./wirelessserial-characteristic');
 
 function WsService() {
   WsService.super_.call(this, {

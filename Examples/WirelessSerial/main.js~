@@ -1,5 +1,5 @@
 
-var bleno = require('bleno');
+var bleno = require('node-bleno');
 
 var DeviceInformationService = require('./device-information-service');
 var WSService = require('./wirelessserial-service');

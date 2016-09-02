@@ -1,21 +1,22 @@
 var util = require('util');
 
-var bleno = require('bleno');
+var bleno = require('../..');
 var BlenoCharacteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
-function HardwareRevisionCharacteristic() {
+function HardwareRevisionCharacteristic(ws) {
   HardwareRevisionCharacteristic.super_.call(this, {
     uuid: '2a27',
     properties: ['read'],
     descriptors: [
       new BlenoDescriptor({
         uuid: '2901',
-        value: 'ws version'
+        value: 'ws(1) version'
       })
     ]
   });
 
+  this.ws = ws;
 }
 
 util.inherits(HardwareRevisionCharacteristic, BlenoCharacteristic);
