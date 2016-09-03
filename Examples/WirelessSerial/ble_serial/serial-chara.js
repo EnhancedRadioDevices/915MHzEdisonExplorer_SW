@@ -4,6 +4,18 @@ var bleno = require('bleno');
 
 var BlenoCharacteristic = bleno.Characteristic;
 
+var PythonShell = require('python-shell');
+var EdisonCtl = new PythonShell('../EdisonCtl.py');
+
+EdisonCtl.on('message', function(message) {
+  console.log(message);
+  // got a message from EdisonCtl.py, so send it to notificatons
+ 
+  if (SerialChara._updateValueCallback != null) {
+    Serial.Chara._updateValueCallback(message);
+  } 
+});
+
 function SerialChara() {
   SerialChara.super_.call(this, {
     uuid: '8a53fa01d9d242afb942ce50a39bc7e6',
@@ -32,7 +44,8 @@ withoutResponse, callback) {
   console.log('SerialChara - onWriteRequest: value = ' + 
 this._value.toString('hex'));
 
-  // TODO: write to pyserial script
+  // write to pyserial script
+  EdisonCtl.send(data); 
   callback(this.RESULT_SUCCESS);
 };
 
@@ -42,7 +55,6 @@ updateValueCallback) {
 
   this._updateValueCallback = updateValueCallback;
 
-  // TODO: start pyserial listener
 };
 
 SerialChara.prototype.onUnsubscribe = function() {
@@ -50,7 +62,6 @@ SerialChara.prototype.onUnsubscribe = function() {
 
   this._updateValueCallback = null;
 
-  // TODO: stop pyserial listener
 };
 
 module.exports = SerialChara;
