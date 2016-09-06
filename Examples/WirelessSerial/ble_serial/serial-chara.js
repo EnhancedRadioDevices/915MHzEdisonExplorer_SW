@@ -5,7 +5,7 @@ var bleno = require('bleno');
 var BlenoCharacteristic = bleno.Characteristic;
 
 var PythonShell = require('python-shell');
-var EdisonCtl = new PythonShell('../EdisonCtl.py');
+var EdisonCtl = new PythonShell('../ExplorerCtl.py');
 
 EdisonCtl.on('message', function(message) {
   console.log(message);
