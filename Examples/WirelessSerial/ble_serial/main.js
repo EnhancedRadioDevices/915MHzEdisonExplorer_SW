@@ -12,8 +12,8 @@ bleno.on('stateChange', function(state) {
   console.log('on -> stateChange: ' + state);
 
   if (state === 'poweredOn') {
-    console.log(SerialChara.uuid);
-    bleno.startAdvertising('WiSerial', [SerialChara.uuid]);
+    bleno.startAdvertising('WiSerial', 
+['8a53fa01d9d242afb942ce50a39bc7e0']);
   } else {
     bleno.stopAdvertising();
   }
@@ -26,7 +26,7 @@ bleno.on('advertisingStart', function(error) {
   if (!error) {
     bleno.setServices([
       new BlenoPrimaryService({
-        uuid: SerialChara.uuid,
+        uuid: '8a53fa01d9d242afb942ce50a39bc7e0',
         characteristics: [
           SerialChara
         ]
