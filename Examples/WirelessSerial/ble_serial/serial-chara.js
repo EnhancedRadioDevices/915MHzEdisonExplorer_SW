@@ -44,8 +44,14 @@ withoutResponse, callback) {
   console.log('SerialChara - onWriteRequest: value = ' + 
 this._value.toString('hex'));
 
+  cmd = '';
+  for (var i = 0; i < data.length; i++) {
+    cmd += data[i].toString() + ',';
+  }
+  cmd = cmd.substring(0, cmd.length - 1); 
   // write to pyserial script
-  EdisonCtl.send(data); 
+  console.log('sending: ' + cmd);
+  EdisonCtl.send(cmd); 
   callback(this.RESULT_SUCCESS);
 };
 
