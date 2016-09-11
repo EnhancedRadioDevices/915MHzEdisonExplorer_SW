@@ -29,10 +29,10 @@ cmd_id,cmd_payload
 
 payload must end with 0
 
-ex: 4800123456780
+ex: 4,8,0,0,1,2,3,4,5,6,7,8,0
 
 ## Receiving a Packet
 
 3,channel,timeout0,timeout1,timeout2,timeout3
 
-ex: 380123
+ex: 3,8,0,1,2,3
