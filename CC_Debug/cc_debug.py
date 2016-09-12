@@ -101,7 +101,8 @@ def wait_dup_ready():
 
 
 ###########################################################################
-# @brief    Issues a command on the debug interface. Only commands that #           return one output byte are supported.
+# @brief    Issues a command on the debug interface. Only commands that
+#           return one output byte are supported.
 #
 # @param    cmd             Command byte
 # @param    cmd_bytes       Pointer to the array of data bytes following 
@@ -217,19 +218,18 @@ def burst_write_block(src):
 
 ###########################################################################
 # @brief    Issues a CHIP_ERASE command on the debug interface and 
-#           waits for it
-#           to complete.
+#           waits for it to complete.
 #
 # @return   None.
 ###########################################################################
 def chip_erase():
     # Send command
-    debug_command(CMD_CHIP_ERASE, 0, 0)
+    debug_command(CMD_CHIP_ERASE, [0])
 
     # Wait for status bit 7 to go low
-    status = debug_command(CMD_READ_STATUS, 0, 0)
+    status = debug_command(CMD_READ_STATUS, [0])
     while((status & STATUS_CHIP_ERASE_BUSY_BM)):
-        status = debug_command(CMD_READ_STATUS, 0, 0)
+        status = debug_command(CMD_READ_STATUS, [0])
 
 ###########################################################################
 # @brief    Writes a block of data to the DUP's XDATA space.
@@ -240,27 +240,23 @@ def chip_erase():
 # @return   None.
 ###########################################################################
 def write_xdata_memory_block(address, values):
-    instr = []
-
     # MOV DPTR, address
-    instr[0] = 0x90
-    instr[1] = HIBYTE(address)
-    instr[2] = LOBYTE(address)
-    debug_command(CMD_DEBUG_INSTR_3B, instr, 3)
+    instr = [0x90, HIBYTE(address), LOBYTE(address)]
+    print instr, len(values)
+    debug_command(CMD_DEBUG_INSTR_3B, instr)
 
     for i in range(len(values)):
         # MOV A, values[i]
-        instr[0] = 0x74
-        instr[1] = values[i]
-        debug_command(CMD_DEBUG_INSTR_2B, instr, 2)
+        instr = [0x74, values[i]]
+        debug_command(CMD_DEBUG_INSTR_2B, instr)
 
         # MOV @DPTR, A
-        instr[0] = 0xF0
-        debug_command(CMD_DEBUG_INSTR_1B, instr, 1)
+        instr = [0xF0]
+        debug_command(CMD_DEBUG_INSTR_1B, instr)
 
         # INC DPTR
-        instr[0] = 0xA3
-        debug_command(CMD_DEBUG_INSTR_1B, instr, 1)
+        instr = [0xA3]
+        debug_command(CMD_DEBUG_INSTR_1B, instr)
 
 
 ###########################################################################
@@ -273,22 +269,17 @@ def write_xdata_memory_block(address, values):
 # @return   None.
 ###########################################################################
 def write_xdata_memory(address, value):
-    instr = []
-
     # MOV DPTR, address
-    instr[0] = 0x90
-    instr[1] = HIBYTE(address)
-    instr[2] = LOBYTE(address)
-    debug_command(CMD_DEBUG_INSTR_3B, instr, 3)
+    instr = [0x90, HIBYTE(address), LOBYTE(address)]
+    debug_command(CMD_DEBUG_INSTR_3B, instr)
 
     # MOV A, values[i]
-    instr[0] = 0x74
-    instr[1] = value
-    debug_command(CMD_DEBUG_INSTR_2B, instr, 2)
+    instr = [0x74, value]
+    debug_command(CMD_DEBUG_INSTR_2B, instr)
 
     # MOV @DPTR, A
-    instr[0] = 0xF0
-    debug_command(CMD_DEBUG_INSTR_1B, instr, 1)
+    instr = [0xF0]
+    debug_command(CMD_DEBUG_INSTR_1B, instr)
 
 
 ###########################################################################
@@ -303,14 +294,14 @@ def read_xdata_memory(address):
     instr = []
 
     # MOV DPTR, address
-    instr[0] = 0x90
-    instr[1] = HIBYTE(address)
-    instr[2] = LOBYTE(address)
-    debug_command(CMD_DEBUG_INSTR_3B, instr, 3)
+    instr.append(0x90)
+    instr.append(HIBYTE(address))
+    instr.append(LOBYTE(address))
+    debug_command(CMD_DEBUG_INSTR_3B, instr)
 
     # MOVX A, @DPTR
-    instr[0] = 0xE0
-    return debug_command(CMD_DEBUG_INSTR_1B, instr, 1)
+    instr = [0xE0]
+    return debug_command(CMD_DEBUG_INSTR_1B, instr)
 
 
 ###########################################################################
@@ -319,11 +310,11 @@ def read_xdata_memory(address):
 #
 # @param    bank        Flash bank to read from [0-7]
 # @param    address     Flash memory start address [0x0000 - 0x7FFF]
-# @param    values      Pointer to destination buffer.
+# @param    num_values  Number of data values to read.
 #
-# @return   None.
+# @return   values.
 ###########################################################################
-def read_flash_memory_block(bank, flash_addr, values):
+def read_flash_memory_block(bank, flash_addr, num_values):
     instr = []
     xdata_addr = (0x8000 + flash_addr)
 
@@ -331,20 +322,22 @@ def read_flash_memory_block(bank, flash_addr, values):
     write_xdata_memory(DUP_MEMCTR, bank)
 
     # 2. Move data pointer to XDATA address (MOV DPTR, xdata_addr)
-    instr[0] = 0x90
-    instr[1] = HIBYTE(xdata_addr)
-    instr[2] = LOBYTE(xdata_addr)
-    debug_command(CMD_DEBUG_INSTR_3B, instr, 3)
+    instr.append(0x90)
+    instr.append(HIBYTE(xdata_addr))
+    instr.append(LOBYTE(xdata_addr))
+    debug_command(CMD_DEBUG_INSTR_3B, instr)
 
-    for i in range(len(values)):
+    values = []
+    for i in range(num_values):
         # 3. Move value pointed to by DPTR to accumulator
         # (MOVX A, @DPTR)
-        instr[0] = 0xE0
-        values[i] = debug_command(CMD_DEBUG_INSTR_1B, instr, 1)
+        instr = [0xE0]
+        values.append(debug_command(CMD_DEBUG_INSTR_1B, instr))
 
         # 4. Increment data pointer (INC DPTR)
-        instr[0] = 0xA3
-        debug_command(CMD_DEBUG_INSTR_1B, instr, 1)
+        instr = [0xA3]
+        debug_command(CMD_DEBUG_INSTR_1B, instr)
+    return values
 
 
 ###########################################################################
@@ -404,13 +397,14 @@ def setup():
     
 if __name__ == "__main__":
     import argparse
+    import sys
     
     # possible options:
     # - get the device ID (-i)
     # - reset device (-r)
     # - erase device (-e)
-    # - program a given file to the device (-p filename)
-    # - read the file currently on the device (-s new_filename)
+    # - program a given file to the device (--p filename)
+    # - read the file currently on the device (--s new_filename)
     parser = argparse.ArgumentParser(description='CC Debugger')
     parser.add_argument('--r', action='store_true',
                     help='temporarily reset the device')
@@ -441,9 +435,60 @@ if __name__ == "__main__":
         print("chip id: " + str(read_chip_id()))
         
     if args.source_file is not None:
-        pass
-        #TODO: read source file, write to chip
+        print("* Opening hex file")
+        try:
+            src_hex = open(args.source_file, 'r')
+        except:
+            print ("Error opening source file " + str(args.source_file))
+            sys.exit(1) #error
+        print("* Erasing Chip")
+        chip_erase()
+        print("* Chip erased")
+        line_num = 0
+        for line in src_hex:
+            line_num += 1
+            line = line.strip()
+            # hex files are of format :llaaaatt[dd...]cc
+            if line[0] != ':':
+                print("Error: illegal hex file line " + str(line_num))
+                sys.exit(1)
+            num_data_bytes = int(line[1:3], 16)
+            addr = int(line[3:7], 16)
+            data_type = int(line[7:9], 16)
+            data = line[9:-2]
+            checksum = line[-2:]
+            # TODO: read checksum
+            if data_type == 1:
+                #end of file
+                sys.exit(0)
+            elif data_type == 0:
+                # data
+                write_xdata_memory_block(addr, [ord(x) for x in data.decode('hex')])
+            else:
+                print("Error: hex file contains data types that are unimplemented in this version of cc_debug.py")
+                sys.exit(1)
+        src_hex.close()
         
     if args.dest_file is not None:
-        pass
-        #TODO: read chip, write to source file
+        print("* Opening hex file")
+        try:
+            dest_hex = open(args.dest_file, 'w')
+        except:
+            print ("Error opening destination file " + str(args.dest_file))
+            sys.exit(1) #error
+        addr_step = 64
+        addr = 0
+        while addr < (8*32738): #max of 8 banks to read
+            hex = read_flash_memory_block(addr/32768, addr%32768, addr_step)
+            addr += addr_step
+            # TODO: print hex to file with specified format 
+            #(currently just spitting out bytes)
+            line = ":"
+            line += '{:02x}'.format(len(data)).zfill(2)
+            line += '{:02x}'.format(addr).zfill(4)
+            line += '00'
+            line += ''.join('{:02x}'.format(x) for x in hex)
+            line += '{:02x}'.format(sum([ord(x) for x in line[1:].decode('hex')]))
+            dest_hex.write(line)
+        dest_hex.write(':00000001FF')
+        dest_hex.close()
