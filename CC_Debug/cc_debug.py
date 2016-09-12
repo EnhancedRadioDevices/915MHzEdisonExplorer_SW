@@ -25,6 +25,30 @@ STATUS_DEBUG_LOCKED_BM           = 0x04
 STATUS_OSC_STABLE_BM             = 0x02
 STATUS_STACK_OVERFLOW_BM         = 0x01
 
+# Start addresses on DUP (Increased buffer size improves performance)
+ADDR_BUF0               =    0x0000 # Buffer (512 bytes)
+ADDR_DMA_DESC_0         =    0x0200 # DMA descriptors (8 bytes)
+ADDR_DMA_DESC_1         =    (ADDR_DMA_DESC_0 + 8)
+
+# DMA channels used on DUP
+CH_DBG_TO_BUF0          =    0x01   # Channel 0
+CH_BUF0_TO_FLASH        =    0x02   # Channel 1
+
+# DUP registers (XDATA space address)
+DUP_DBGDATA           =  0x6260  # Debug interface data buffer
+DUP_FCTL              =  0x6270  # Flash controller
+DUP_FADDRL            =  0x6271  # Flash controller addr
+DUP_FADDRH            =  0x6272  # Flash controller addr
+DUP_FWDATA            =  0x6273  # Clash controller data buffer
+DUP_CLKCONSTA         =  0x709E  # Sys clock status
+DUP_CLKCONCMD         =  0x70C6  # Sys clock configuration
+DUP_MEMCTR            =  0x70C7  # Flash bank xdata mapping
+DUP_DMA1CFGL          =  0x70D2  # Low byte, DMA config ch. 1
+DUP_DMA1CFGH          =  0x70D3  # Hi byte , DMA config ch. 1
+DUP_DMA0CFGL          =  0x70D4  # Low byte, DMA config ch. 0
+DUP_DMA0CFGH          =  0x70D5  # Low byte, DMA config ch. 0
+DUP_DMAARM            =  0x70D6  # DMA arming register
+
 # MRAA Edison Pin numbers
 CC_DC        = 19 # debug clock: P2_2 on CC1110, GP19 on Edison
 CC_DD        = 7  # debug data: P2_1 on CC1110, GP20 on Edison
@@ -48,6 +72,31 @@ def LOBYTE(w):
 def HIBYTE(w):
     return ((w >> 8) & 0xFF)
 
+#! DUP DMA descriptor
+dma_desc_0 = [
+    # Debug Interface -> Buffer
+    HIBYTE(DUP_DBGDATA),            # src[15:8]
+    LOBYTE(DUP_DBGDATA),            # src[7:0]
+    HIBYTE(ADDR_BUF0),              # dest[15:8]
+    LOBYTE(ADDR_BUF0),              # dest[7:0]
+    0,                              # len[12:8] - filled in later
+    0,                              # len[7:0]
+    31,                             # trigger: DBG_BW
+    0x11                            # increment destination
+]
+#! DUP DMA descriptor
+dma_desc_1 = [
+    # Buffer -> Flash controller
+    HIBYTE(ADDR_BUF0),              # src[15:8]
+    LOBYTE(ADDR_BUF0),              # src[7:0]
+    HIBYTE(DUP_FWDATA),             # dest[15:8]
+    LOBYTE(DUP_FWDATA),             # dest[7:0]
+    0,                              # len[12:8] - filled in later
+    0,                              # len[7:0]
+    18,                             # trigger: FLASH
+    0x42                           # increment source
+]
+    
 ###########################################################################
 # @brief    Writes a byte on the debug interface. Requires DD to be
 #           output when function is called.
@@ -352,16 +401,19 @@ def read_flash_memory_block(bank, flash_addr, num_values):
 # @return   None.
 ###########################################################################
 def write_flash_memory_block(src, start_addr):
+    while len(src) < 4:
+        src.append(0)
+
     # 1. Write the 2 DMA descriptors to RAM
-    write_xdata_memory_block(ADDR_DMA_DESC_0, dma_desc_0, 8)
-    write_xdata_memory_block(ADDR_DMA_DESC_1, dma_desc_1, 8)
+    write_xdata_memory_block(ADDR_DMA_DESC_0, dma_desc_0)
+    write_xdata_memory_block(ADDR_DMA_DESC_1, dma_desc_1)
 
     # 2. Update LEN value in DUP's DMA descriptors
-    len = [HIBYTE(len(src)), LOBYTE(len(src))]
+    l = [HIBYTE(len(src)), LOBYTE(len(src))]
     # LEN, DBG => ram
-    write_xdata_memory_block((ADDR_DMA_DESC_0+4), len, 2)  
+    write_xdata_memory_block((ADDR_DMA_DESC_0+4), l)  
     # LEN, ram => flash
-    write_xdata_memory_block((ADDR_DMA_DESC_1+4), len, 2)  
+    write_xdata_memory_block((ADDR_DMA_DESC_1+4), l)  
 
     # 3. Set DMA controller pointer to the DMA descriptors
     write_xdata_memory(DUP_DMA0CFGH, HIBYTE(ADDR_DMA_DESC_0))
@@ -383,7 +435,7 @@ def write_flash_memory_block(src, start_addr):
     write_xdata_memory(DUP_FCTL, 0x06)
 
     # 7. Wait until flash controller is done
-    while (read_xdata_memory(XREG_TO_INT(FCTL)) & 0x80):
+    while (read_xdata_memory(DUP_FCTL) & 0x80): #should this be DUP_?
         pass
         
 def cc_delay(micros):
@@ -463,7 +515,9 @@ if __name__ == "__main__":
                 sys.exit(0)
             elif data_type == 0:
                 # data
-                write_xdata_memory_block(addr, [ord(x) for x in data.decode('hex')])
+				# w_f_m_b expects at least four bytes
+				# what todo about that?
+                write_flash_memory_block([ord(x) for x in data.decode('hex')], addr)
             else:
                 print("Error: hex file contains data types that are unimplemented in this version of cc_debug.py")
                 sys.exit(1)
