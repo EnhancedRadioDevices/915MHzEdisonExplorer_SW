@@ -11,30 +11,36 @@ def send_get_pkt_cmd(ss, chan, timeout):
 
 if __name__ == "__main__":
     import argparse
-    
+    import time
+
     # possible options:
     # - select channel (--c)
     parser = argparse.ArgumentParser(description='RemoteLEDs Explorer Control')
-    parser.add_argument('--c', dest='channel', default=0,
+    parser.add_argument('--c', dest='channel', default=0, type=int,
                     help='set rx channel')
 
     args = parser.parse_args()
-
+    print(args.channel)
 	
-	ss = spi_serial.SpiSerial()
+    ss = spi_serial.SpiSerial()
+    time.sleep(3)
 
     cmd = [1]
     ss.write(cmd)
+    ss.inWaiting()
     resp = ss.read(0)
+    print(resp)
     if resp != [79, 75, 0]:
         print "couldn't find CC1110"
-        return
+        exit()
+    print("found cc1110")
 
     while True:
         try:
-            send_get_cmd_pkt(ss, args.channel, 2222)
+            send_get_pkt_cmd(ss, args.channel, 2222)
+            print("waiting for pkt")
             while ss.inWaiting() == 0:
-                time.sleep(1)
+               time.sleep(1)
             resp = ss.read(0)
             print(resp)
             if len(resp) > 2:
