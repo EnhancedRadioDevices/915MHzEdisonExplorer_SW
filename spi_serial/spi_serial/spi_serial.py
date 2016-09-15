@@ -53,7 +53,7 @@ class SpiSerial():
             self.rx_buf.append(rx)
         return len(self.rx_buf)
 
-    def reset(self):
-        self.RST = m.Gpio(36)
-        self.RST.dir(m.DIR_OUT)
-        self.RST.write(1)
+    #def reset(self):
+        #self.RST = m.Gpio(36)
+        #self.RST.dir(m.DIR_OUT)
+        #self.RST.write(1)
