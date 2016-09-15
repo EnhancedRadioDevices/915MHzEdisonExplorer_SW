@@ -3,10 +3,6 @@ import mraa as m
 
 class SpiSerial():
     def __init__(self):
-        self.RST = m.Gpio(36)
-        self.RST.dir(m.DIR_OUT)
-        self.RST.write(1)	
-    
         self.cs0 = m.Gpio(23)
         self.cs0.dir(m.DIR_OUT)
         self.cs0.write(1)
@@ -56,3 +52,8 @@ class SpiSerial():
             rx = self.spi_xfer(0)
             self.rx_buf.append(rx)
         return len(self.rx_buf)
+
+	def reset(self):
+		self.RST = m.Gpio(36)
+        self.RST.dir(m.DIR_OUT)
+        self.RST.write(1)	
