@@ -1,4 +1,5 @@
 import mraa as m
+import time
 
 
 class SpiSerial():
@@ -56,4 +57,8 @@ class SpiSerial():
     def reset(self):
         self.RST = m.Gpio(36)
         self.RST.dir(m.DIR_OUT)
-        self.RST.write(1)
+        self.RST.write(0) #reset the device
+        time.sleep(0.01)
+        self.RST.write(1) #let the device out of reset
+        time.sleep(2.01) #wait for the CC1110 to come up
+        # TODO: change the CC1110 code to not have a 2s delay
