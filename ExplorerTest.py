@@ -3,7 +3,7 @@ import spi_serial
 
 if __name__ == "__main__":
     ss = spi_serial.SpiSerial()
-    time.sleep(3)
+    ss.reset()
 
     cmd = [1]
     ss.write(cmd)
