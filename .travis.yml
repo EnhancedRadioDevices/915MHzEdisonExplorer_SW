@@ -1,0 +1,9 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+# install:
+#   - cd spi_serial ; pip install -r requirements.txt
+script:
+  # - cd spi_serial ; nosetests
+  - pep8 .
