@@ -26,28 +26,22 @@ STATUS_OSC_STABLE_BM             = 0x02
 STATUS_STACK_OVERFLOW_BM         = 0x01
 
 # Start addresses on DUP (Increased buffer size improves performance)
-ADDR_BUF0               =    0x0000 # Buffer (512 bytes)
-ADDR_DMA_DESC_0         =    0x0200 # DMA descriptors (8 bytes)
-ADDR_DMA_DESC_1         =    (ADDR_DMA_DESC_0 + 8)
+ADDR_BUF0               =    0xf000 # Buffer (512 bytes)
+FLASH_BUF_LEN           =    0x0200 # Buffer length (512)
+ADDR_DMA_DESC           =    0xff00 # DMA descripotr (8 bytes)
 
 # DMA channels used on DUP
 CH_DBG_TO_BUF0          =    0x01   # Channel 0
 CH_BUF0_TO_FLASH        =    0x02   # Channel 1
 
 # DUP registers (XDATA space address)
-DUP_DBGDATA           =  0x6260  # Debug interface data buffer
-DUP_FCTL              =  0x6270  # Flash controller
-DUP_FADDRL            =  0x6271  # Flash controller addr
-DUP_FADDRH            =  0x6272  # Flash controller addr
-DUP_FWDATA            =  0x6273  # Clash controller data buffer
-DUP_CLKCONSTA         =  0x709E  # Sys clock status
-DUP_CLKCONCMD         =  0x70C6  # Sys clock configuration
-DUP_MEMCTR            =  0x70C7  # Flash bank xdata mapping
-DUP_DMA1CFGL          =  0x70D2  # Low byte, DMA config ch. 1
-DUP_DMA1CFGH          =  0x70D3  # Hi byte , DMA config ch. 1
-DUP_DMA0CFGL          =  0x70D4  # Low byte, DMA config ch. 0
-DUP_DMA0CFGH          =  0x70D5  # Low byte, DMA config ch. 0
-DUP_DMAARM            =  0x70D6  # DMA arming register
+DUP_FCTL              =  0xDFAE  # Flash controller
+DUP_FADDRL            =  0xDFAC  # Flash controller addr
+DUP_FADDRH            =  0xDFAD  # Flash controller addr
+DUP_FWDATA            =  0xDFAF  # Clash controller data buffer
+DUP_DMA0CFGL          =  0xDFD4  # Low byte, DMA config ch. 0
+DUP_DMA0CFGH          =  0xDFD5  # Low byte, DMA config ch. 0
+DUP_DMAARM            =  0xDFD6  # DMA arming register
 
 # MRAA Edison Pin numbers
 CC_DC        = 19 # debug clock: P2_2 on CC1110, GP19 on Edison
@@ -73,30 +67,18 @@ def HIBYTE(w):
     return ((w >> 8) & 0xFF)
 
 #! DUP DMA descriptor
-dma_desc_0 = [
-    # Debug Interface -> Buffer
-    HIBYTE(DUP_DBGDATA),            # src[15:8]
-    LOBYTE(DUP_DBGDATA),            # src[7:0]
-    HIBYTE(ADDR_BUF0),              # dest[15:8]
-    LOBYTE(ADDR_BUF0),              # dest[7:0]
-    0,                              # len[12:8] - filled in later
-    0,                              # len[7:0]
-    31,                             # trigger: DBG_BW
-    0x11                            # increment destination
+dma_desc = [
+  # Buffer -> Flash controller
+  HIBYTE(ADDR_BUF0),              # src[15:8]
+  LOBYTE(ADDR_BUF0),              # src[7:0]
+  HIBYTE(DUP_FWDATA),             # dest[15:8]
+  LOBYTE(DUP_FWDATA),             # dest[7:0]
+  HIBYTE(FLASH_BUF_LEN),          # len[12:8]
+  LOBYTE(FLASH_BUF_LEN),          # len[7:0]
+  0x12,                           # trigger: Flash data write complete
+  0x42,                           # increment source, DMA high priority
 ]
-#! DUP DMA descriptor
-dma_desc_1 = [
-    # Buffer -> Flash controller
-    HIBYTE(ADDR_BUF0),              # src[15:8]
-    LOBYTE(ADDR_BUF0),              # src[7:0]
-    HIBYTE(DUP_FWDATA),             # dest[15:8]
-    LOBYTE(DUP_FWDATA),             # dest[7:0]
-    0,                              # len[12:8] - filled in later
-    0,                              # len[7:0]
-    18,                             # trigger: FLASH
-    0x42                           # increment source
-]
-    
+
 ###########################################################################
 # @brief    Writes a byte on the debug interface. Requires DD to be
 #           output when function is called.
@@ -289,6 +271,8 @@ def chip_erase():
 # @return   None.
 ###########################################################################
 def write_xdata_memory_block(address, values):
+    debug_command(CMD_DEBUG_INSTR_1B, [0])
+
     # MOV DPTR, address
     instr = [0x90, HIBYTE(address), LOBYTE(address)]
     print instr, len(values)
@@ -318,6 +302,8 @@ def write_xdata_memory_block(address, values):
 # @return   None.
 ###########################################################################
 def write_xdata_memory(address, value):
+    debug_command(CMD_DEBUG_INSTR_1B, [0])
+
     # MOV DPTR, address
     instr = [0x90, HIBYTE(address), LOBYTE(address)]
     debug_command(CMD_DEBUG_INSTR_3B, instr)
@@ -357,23 +343,20 @@ def read_xdata_memory(address):
 # @brief    Reads 1-32767 bytes from DUP's flash to a given buffer on 
 #           the programmer.
 #
-# @param    bank        Flash bank to read from [0-7]
 # @param    address     Flash memory start address [0x0000 - 0x7FFF]
 # @param    num_values  Number of data values to read.
 #
 # @return   values.
 ###########################################################################
-def read_flash_memory_block(bank, flash_addr, num_values):
-    instr = []
-    xdata_addr = (0x8000 + flash_addr)
+def read_flash_memory_block(flash_addr, num_values):
+    debug_command(CMD_DEBUG_INSTR_1B, [0])
 
-    # 1. Map flash memory bank to XDATA address 0x8000-0xFFFF
-    write_xdata_memory(DUP_MEMCTR, bank)
+    instr = []
 
     # 2. Move data pointer to XDATA address (MOV DPTR, xdata_addr)
     instr.append(0x90)
-    instr.append(HIBYTE(xdata_addr))
-    instr.append(LOBYTE(xdata_addr))
+    instr.append(HIBYTE(flash_addr))
+    instr.append(LOBYTE(flash_addr))
     debug_command(CMD_DEBUG_INSTR_3B, instr)
 
     values = []
@@ -390,9 +373,7 @@ def read_flash_memory_block(bank, flash_addr, num_values):
 
 
 ###########################################################################
-# @brief    Writes 4-2048 bytes to DUP's flash memory. 
-#           Parameter \c num_bytes
-#           must be a multiple of 4.
+# @brief    Writes bytes to DUP's flash memory. 
 #
 # @param    src         Pointer to programmer's source buffer 
 #                      (in XDATA space)
@@ -404,40 +385,39 @@ def write_flash_memory_block(src, start_addr):
     while len(src) < 4:
         src.append(0)
 
-    # 1. Write the 2 DMA descriptors to RAM
-    write_xdata_memory_block(ADDR_DMA_DESC_0, dma_desc_0)
-    write_xdata_memory_block(ADDR_DMA_DESC_1, dma_desc_1)
-
-    # 2. Update LEN value in DUP's DMA descriptors
-    l = [HIBYTE(len(src)), LOBYTE(len(src))]
-    # LEN, DBG => ram
-    write_xdata_memory_block((ADDR_DMA_DESC_0+4), l)  
-    # LEN, ram => flash
-    write_xdata_memory_block((ADDR_DMA_DESC_1+4), l)  
-
-    # 3. Set DMA controller pointer to the DMA descriptors
-    write_xdata_memory(DUP_DMA0CFGH, HIBYTE(ADDR_DMA_DESC_0))
-    write_xdata_memory(DUP_DMA0CFGL, LOBYTE(ADDR_DMA_DESC_0))
-    write_xdata_memory(DUP_DMA1CFGH, HIBYTE(ADDR_DMA_DESC_1))
-    write_xdata_memory(DUP_DMA1CFGL, LOBYTE(ADDR_DMA_DESC_1))
-
-    # 4. Set Flash controller start address
-    # (wants 16MSb of 18 bit address)
-    write_xdata_memory(DUP_FADDRH, HIBYTE( (start_addr>>2) ))
-    write_xdata_memory(DUP_FADDRL, LOBYTE( (start_addr>>2) ))
-
-    # 5. Arm DBG=>buffer DMA channel and start burst write
-    write_xdata_memory(DUP_DMAARM, CH_DBG_TO_BUF0)
-    burst_write_block(src)
-
-    # 6. Start programming: buffer to flash
-    write_xdata_memory(DUP_DMAARM, CH_BUF0_TO_FLASH)
-    write_xdata_memory(DUP_FCTL, 0x06)
-
-    # 7. Wait until flash controller is done
-    while (read_xdata_memory(DUP_FCTL) & 0x80): #should this be DUP_?
-        pass
+    start_byte = 0
+    while start_byte < len(src):
+        if len(src) - start_byte > 512:
+            to_send = src[start_byte:start_byte+512]
+        else:
+            to_send = src[start_byte:]
         
+        dma_desc[4] = HIBYTE(len(to_send)) # len[12:8]
+        dma_desc[5] = LOBYTE(len(to_send)) # len[7:0]
+        
+        # 1. Write the DMA descriptor to RAM
+        write_xdata_memory_block(ADDR_DMA_DESC, dma_desc)
+
+        # 2. Set DMA controller pointer to the DMA descriptors
+        write_xdata_memory(DUP_DMA0CFGH, HIBYTE(ADDR_DMA_DESC))
+        write_xdata_memory(DUP_DMA0CFGL, LOBYTE(ADDR_DMA_DESC))
+      
+        # 3. Set Flash controller start address (wants 16MSb of 18 bit address)
+        write_xdata_memory(DUP_FADDRH, HIBYTE( ((start_addr + start_byte)>>1) ))
+        write_xdata_memory(DUP_FADDRL, LOBYTE( ((start_addr + start_byte)>>1) ))
+        start_byte += len(to_send)
+
+        # 4. Write data to buffer
+        write_xdata_memory_block(ADDR_BUF0, to_send)
+
+        # 5. Arm buffer -> flash DMA channel (channel 0)
+        write_xdata_memory(DUP_DMAARM, 0x01)
+        write_xdata_memory(DUP_FCTL, 0x02) # Trigger write
+
+        # 7. Wait until flash controller is done
+        while (read_xdata_memory(DUP_FCTL) & 0x80): #should this be DUP_?
+            pass
+                
 def cc_delay(micros):
     sleep(micros/1000000.0)
 
@@ -447,6 +427,17 @@ def setup():
     gpioRST.dir(m.DIR_OUT)
     gpioDD.write(1)
     
+TOTAL_FLASH_SIZE = 0x830
+FLASH_BLOCK_SIZE = 0x400
+def dump_flash(fname):
+    unsigned char flash_buf[TOTAL_FLASH_SIZE];
+    f = open(fname, 'w')
+    print("Reading flash.")
+    flash_buf = read_flash_memory_block(0x0000, TOTAL_FLASH_SIZE)
+    f.write(flash_buf)
+    f.close();
+
+
 if __name__ == "__main__":
     import argparse
     import sys
