@@ -189,6 +189,39 @@ def debug_init():
     cc_delay(1)   # Wait
     gpioRST.write(1)
     print("letting go of reset")
+    cc_delay(1)
+    
+    # Not sure why this is necessary, but the cc-debugger does it
+    ok = debug_command(CMD_DEBUG_INSTR_1B, [0]);
+    cc_delay(1)
+
+    ok = debug_command(CMD_READ_STATUS, 0);
+    printf("status = " + str(ok));
+   
+    cc_delay(1)
+
+    ok = read_xdata_memory(0xDFC6);
+    printf("CLKCON = 0x%02x\n", str(ok))
+
+    # Write FWT for 24MHz clock (24MHz = 0x20)
+    ok = write_xdata_memory(0xDFAB, 0x20);
+    printf("Updated FWT: " + str(ok));
+    cc_delay(1)
+
+    # Read FWT
+    ok = read_xdata_memory(0xDFAB)
+    printf("FWT = " + str(reg))
+    cc_delay(1)
+
+    # Write Config
+    ok = debug_command(CMD_WR_CONFIG, [0x22]);
+    printf("Debug Config = 0x%02x\n", reg);
+    cc_delay(1)
+
+    # Read Config
+    ok = debug_command(CMD_RD_CONFIG, [])
+    print("Wrote debug config: " + str(reg))
+
 
 ###########################################################################
 # @brief    Reads the chip ID over the debug interface using the
@@ -430,7 +463,6 @@ def setup():
 TOTAL_FLASH_SIZE = 0x830
 FLASH_BLOCK_SIZE = 0x400
 def dump_flash(fname):
-    unsigned char flash_buf[TOTAL_FLASH_SIZE];
     f = open(fname, 'w')
     print("Reading flash.")
     flash_buf = read_flash_memory_block(0x0000, TOTAL_FLASH_SIZE)
