@@ -195,32 +195,32 @@ def debug_init():
     ok = debug_command(CMD_DEBUG_INSTR_1B, [0]);
     cc_delay(1)
 
-    ok = debug_command(CMD_READ_STATUS, 0);
-    printf("status = " + str(ok));
+    ok = debug_command(CMD_READ_STATUS, [0]);
+    print("status = " + str(ok));
    
     cc_delay(1)
 
     ok = read_xdata_memory(0xDFC6);
-    printf("CLKCON = 0x%02x\n", str(ok))
+    print("CLKCON = 0x%02x\n", str(ok))
 
     # Write FWT for 24MHz clock (24MHz = 0x20)
     ok = write_xdata_memory(0xDFAB, 0x20);
-    printf("Updated FWT: " + str(ok));
+    print("Updated FWT: " + str(ok));
     cc_delay(1)
 
     # Read FWT
     ok = read_xdata_memory(0xDFAB)
-    printf("FWT = " + str(reg))
+    print("FWT = " + str(ok))
     cc_delay(1)
 
     # Write Config
-    ok = debug_command(CMD_WR_CONFIG, [0x22]);
-    printf("Debug Config = 0x%02x\n", reg);
+    ok = debug_command(CMD_WR_CONFIG, [0x22])
+    print("Debug Config = 0x%02x\n", ok);
     cc_delay(1)
 
     # Read Config
     ok = debug_command(CMD_RD_CONFIG, [])
-    print("Wrote debug config: " + str(reg))
+    print("Wrote debug config: " + str(ok))
 
 
 ###########################################################################
