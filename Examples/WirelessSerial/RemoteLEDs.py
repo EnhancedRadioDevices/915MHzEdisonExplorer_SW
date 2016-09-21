@@ -3,11 +3,13 @@ import spi_serial
 import struct
 import time
 
+
 def send_get_pkt_cmd(ss, chan, timeout):
     timeout = struct.pack("<I", int(timeout))
     cmd = [3, chan]
     cmd.extend(timeout)
     ss.write(cmd)
+
 
 if __name__ == "__main__":
     import argparse
@@ -17,11 +19,11 @@ if __name__ == "__main__":
     # - select channel (--c)
     parser = argparse.ArgumentParser(description='RemoteLEDs Explorer Control')
     parser.add_argument('--c', dest='channel', default=0, type=int,
-                    help='set rx channel')
+                        help='set rx channel')
 
     args = parser.parse_args()
     print(args.channel)
-	
+
     ss = spi_serial.SpiSerial()
     time.sleep(3)
 
@@ -40,7 +42,7 @@ if __name__ == "__main__":
             send_get_pkt_cmd(ss, args.channel, 2222)
             print("waiting for pkt")
             while ss.inWaiting() == 0:
-               time.sleep(1)
+                time.sleep(1)
             resp = ss.read(0)
             print(resp)
             if len(resp) > 2:
