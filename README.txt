@@ -3,6 +3,9 @@ Intel Edison Software Library for 915MHz Explorer Block
 
 This software is still in progress. Check back later
 
+This software is released under the MIT license. See the accompanying
+LICENSE.txt for more details.
+
 If you want to develop for the CC1110 on the EdisonExplorer board, start by installing the spi_serial library.
 
 # CC1110 Firmware
@@ -28,3 +31,5 @@ ccprog -p 19,7,36 write path/to/firmware.hex
 Note: the 19,7,36 numbers in the above string refer to the Edison hardware
 pins that are used to communicate with the CC1110. If you aren't using the
 Explorer board, you may need to use different pin numbers.
+
+
