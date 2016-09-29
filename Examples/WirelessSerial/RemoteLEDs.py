@@ -25,7 +25,7 @@ if __name__ == "__main__":
     print(args.channel)
 
     ss = spi_serial.SpiSerial()
-    time.sleep(3)
+    ss.reset()
 
     cmd = [1]
     ss.write(cmd)
@@ -47,8 +47,9 @@ if __name__ == "__main__":
             print(resp)
             if len(resp) > 2:
                 # we got a packet
-                if len(resp) == 5 and resp[2] == 8:
+                if len(resp) >= 5 and resp[2] == 8:
                     # LED cntl packet
                     ss.write(resp[2:5])
+                    time.sleep(0.1)
         except:
             break
