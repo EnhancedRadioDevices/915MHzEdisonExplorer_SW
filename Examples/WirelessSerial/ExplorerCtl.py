@@ -2,6 +2,7 @@
 import spi_serial
 import time
 
+# accept user input and send it to the CC1110
 if __name__ == "__main__":
     ss = spi_serial.SpiSerial()
 
