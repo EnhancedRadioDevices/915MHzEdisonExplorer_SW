@@ -8,3 +8,6 @@ install:
 script:
   # - cd spi_serial ; nosetests
   - pep8 .
+notifications:
+  email:
+    - nick@goodmeasuredesign.net
