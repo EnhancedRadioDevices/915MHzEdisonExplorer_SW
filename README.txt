@@ -26,8 +26,9 @@ https://github.com/ps2/ccprog
 
 Once you've cloned and made that program, you can flash a new hex file to the CC1110 using the following commands:
 
+    wget https://github.com/EnhancedRadioDevices/subg_rfspy/releases/download/v0.8-explorer/spi1_alt2_EDISON_EXPLORER_US_STDLOC.hex
     ccprog -p 19,7,36 erase
-    ccprog -p 19,7,36 write path/to/firmware.hex
+    ccprog -p 19,7,36 write spi1_alt2_EDISON_EXPLORER_US_STDLOC.hex
 
 Note: the 19,7,36 numbers in the above string refer to the Edison hardware
 pins that are used to communicate with the CC1110. If you aren't using the
