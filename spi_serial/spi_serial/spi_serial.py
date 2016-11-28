@@ -45,6 +45,12 @@ class SpiSerial():
         ret_val = self.rx_buf[0:num_bytes]
         del(self.rx_buf[0:num_bytes])
         return ret_val
+        
+    def peek(self):
+        return self.rx_buf[0]
+        
+    def pop(self):
+        return self.read(1)
 
     def inWaiting(self):
         self.spi_xfer(0x99)
