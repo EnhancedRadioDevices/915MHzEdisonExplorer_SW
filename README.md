@@ -19,6 +19,19 @@ If you're running yocto, do the following:
 If you're running ubilinux/jubilinux, follow the instructions here:
 https://learn.sparkfun.com/tutorials/installing-libmraa-on-ubilinux-for-edison
 
+### mraa with support for non-root users
+
+Currently, mraa only works with root access. There's a branch of mraa that gets around this for the Edison, and if you want non-root users to be able to use mraa you can try the following (courtesy of brendan.le.foll@intel.com).
+
+> It’s in this branch https://github.com/intel-iot-devkit/mraa/tree/edison-perms. Imraa can be run with this config file: https://github.com/intel-iot-devkit/mraa/blob/edison-perms/imraa/imraa.io.edison.conf. Switch out ‘brendan’ for user/group combo of your choice and you can set gpio/i2c/spi to a user of your choice. Note that the first 4 lines are what you can edit, the rest should be left as is (we can only support ‘one’ user although you can play with groups to do combinations etc…). You will also need to chmod +x /sys/kernel/debug.
+> 
+> I’ve given it a quick run through and gpio/i2c/spi seems to work on my Arduino breakout, should work on others but may need a bit of tweaking in the config, syslog should tell you and you can add the IO as a raw pin, uart/pwm/aio needs a bit more work but should be easy to add. It’s a bit too Edison specific to get merged right now but with a bit more tweaking I think I can improve it a lot.
+> 
+> To run imraa:
+> $ imraa –I imraa.io.edison.conf
+> 
+> You can run it with the systemd service file provided and put the config in /etc/imraa.conf. That way you don’t need the –I flag.
+
 # Setup
 
 
