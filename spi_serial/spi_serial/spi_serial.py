@@ -54,11 +54,17 @@ class SpiSerial():
             self.rx_buf.append(rx)
         return len(self.rx_buf)
 
-    def reset(self):
+    def reset(self, led=None):
         self.RST = m.Gpio(36)
         self.RST.dir(m.DIR_OUT)
         self.RST.write(0)   # reset the device
         time.sleep(0.01)
         self.RST.write(1)   # let the device out of reset
-        time.sleep(2.01)    # wait for the CC1110 to come up
-        # TODO: change the CC1110 code to not have a 2s delay
+        if led != None:
+            self.write([8,0,1])
+            time.sleep(1)
+            self.write([8,0,0])
+            self.write([8,1,1])
+            time.sleep(1)
+            self.write([8,1,0])
+        time.sleep(0.01)    # wait for the CC1110 to come up
