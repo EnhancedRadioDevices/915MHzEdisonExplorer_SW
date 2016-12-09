@@ -45,10 +45,10 @@ class SpiSerial():
         ret_val = self.rx_buf[0:num_bytes]
         del(self.rx_buf[0:num_bytes])
         return ret_val
-        
+
     def peek(self):
         return self.rx_buf[0]
-        
+
     def pop(self):
         return self.read(1)
 
@@ -60,18 +60,18 @@ class SpiSerial():
             self.rx_buf.append(rx)
         return len(self.rx_buf)
 
-    def reset(self, led=None):
+    def reset(self, led=0):
         self.RST = m.Gpio(36)
         self.RST.dir(m.DIR_OUT)
         self.RST.write(0)   # reset the device
         time.sleep(0.01)
         self.RST.write(1)   # let the device out of reset
         time.sleep(0.01)
-        if led != None:
-            self.write([8,0,1])
+        if led != 0:
+            self.write([8, 0, 1])
             time.sleep(1)
-            self.write([8,0,0])
-            self.write([8,1,1])
+            self.write([8, 0, 0])
+            self.write([8, 1, 1])
             time.sleep(1)
-            self.write([8,1,0])
+            self.write([8, 1, 0])
         time.sleep(0.01)    # wait for the CC1110 to come up

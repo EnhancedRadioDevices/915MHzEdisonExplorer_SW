@@ -4,7 +4,7 @@ import spi_serial
 if __name__ == "__main__":
     ss = spi_serial.SpiSerial()
     flash = 1
-	ss.reset(flash)
+    ss.reset(flash)
 
     cmd = [1]
     ss.write(cmd)
