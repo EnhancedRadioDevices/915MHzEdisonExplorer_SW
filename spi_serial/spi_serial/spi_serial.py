@@ -66,6 +66,7 @@ class SpiSerial():
         self.RST.write(0)   # reset the device
         time.sleep(0.01)
         self.RST.write(1)   # let the device out of reset
+        time.sleep(0.01)
         if led != None:
             self.write([8,0,1])
             time.sleep(1)
