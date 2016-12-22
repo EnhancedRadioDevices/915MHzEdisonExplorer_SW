@@ -77,3 +77,25 @@ Once you have the Explorer software and firmware loaded, you should be able to r
     python ExplorerTest.py
     
 This should return an OK message and blink the two user LEDs on the Explorer board. If that happens, your board is working well.
+
+If you have two Explorers and would like to perform a more thorough test you can perform the following steps:
+1. Plug battery into Explorer. The PWR LED should light up.
+2. Connect USB into the UART port. The PWR LED should stay lit and the CHRG LED should light up (battery should be allowed to partially discharge beforehad to test CHRG)
+3. Run the following commands:
+
+	cd ~/src/915MHzEdisonExplorer_SW/Examples/Wireless
+	python RemoteLEDs.py
+	
+This should return a message about finding the CC1110 and indicate that it is waiting for a packet.
+4. From the second Explorer run the following commands:
+
+	cd ~/src/915MHzEdisonExplorer_SW/Examples/Wireless
+	python ExplorerCtl.py
+	4,0,0,0,8,1,1,0
+	
+The first Explorer should print the received packet preceeded by RSSI and packet number e.g. [82,1,8,1,1,0]. The LED labeled D2 should also light up.
+5. Switch the USB on the first Explorer from the UART to the OTG. The PWR and D2 LEDs should remain lit. On your computer you should see a volume labled "Edison" become available.
+6. Remove the battery. The PWR and D2 LEDs should remain lit. The volume "Edison" should remain available.
+
+If every step gave the described results then your board is working well.
+
