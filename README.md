@@ -71,12 +71,16 @@ Explorer board, you may need to use different pin numbers.
 
 # Testing
 
+## Automated Test Script
+
 Once you have the Explorer software and firmware loaded, you should be able to run the Explorer hardware test script to verify that everything is working. You can do this as follows:
 
     cd ~/src/915MHzEdisonExplorer_SW/
     python ExplorerTest.py
     
 This should return an OK message and blink the two user LEDs on the Explorer board. If that happens, your board is working well.
+
+## Explorer Radio Test
 
 If you have two Explorers and would like to perform a more thorough test you can perform the following steps:
 1. Plug battery into Explorer. The PWR LED should light up.
@@ -99,3 +103,25 @@ The first Explorer should print the received packet preceeded by RSSI and packet
 
 If every step gave the described results then your board is working well.
 
+## USB OTG Testing
+
+If you have a USB On-The-Go cable or adaptor, you can quickly test the OTG port functionality. 
+1. Connect to your Explorer Board as normal (using the USB UART port) and log in.
+2. Using the USB OTG cable, connect any Android device (such as a phone) to the USB OTG port on the Explorer.
+3. Run the following command:
+
+	lsusb
+
+If your response looks like this: 
+
+	unable to initialize libusb: -99
+
+Try flipping your OTG cable around.
+
+If it working correctly, you should see an output that looks something like this: 
+
+	Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+	Bus 001 Device 004: ID 04e8:686c Samsung Electronics Co., Ltd
+	Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+	
+If you see this, then your USB OTG port is working well.
